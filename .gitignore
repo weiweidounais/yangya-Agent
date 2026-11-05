@@ -1,0 +1,31 @@
+._*
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+data/
+.env
+*.db
+*.db-shm
+*.db-wal
+.DS_Store
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.mypy_cache/
+docs/feishu_create*.json
+docs/wb_preview/
+docs/feishu_create.json
+docs/feishu_create_v2.json
+
+data/
+*.log
+data/feishu_ws.log
+
+# Golden reports
+golden-report.*
+
+# Generated intent artifacts (python scripts/embed_intents.py / calibrate_intents.py)
+intents/exemplar-vectors.json
+intents/calibration-report.json

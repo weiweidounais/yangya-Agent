@@ -1,0 +1,31 @@
+# Direct runtime dependencies, pinned. Full transitive pins: requirements.lock
+# (pip install -r requirements.txt -c requirements.lock). Bump deliberately and
+# re-run unit + golden; the golden report manifest records the resolved versions.
+aiosqlite==0.21.0
+cryptography==50.0.2
+fastapi==0.143.2
+httpx==0.28.1
+langgraph-checkpoint-sqlite==3.1.2
+langgraph==1.2.15
+lark-oapi==1.7.5
+openai==3.31.0
+pydantic==2.14.1
+python-dotenv==1.2.4
+sqlalchemy==2.1.4
+psycopg[binary]==3.2.10
+sqlite-vec==0.1.9
+uvicorn[standard]==0.54.0
+python-multipart==0.0.32
+pypdf==6.20.1
+python-docx==1.2.0
+# Observability (Langfuse via OTLP); inert unless LANGFUSE_ENABLED=1
+opentelemetry-api==1.45.1
+opentelemetry-sdk==1.45.1
+opentelemetry-exporter-otlp-proto-http==1.45.1
+# Tool contract validation
+jsonschema==4.26.0
+PyYAML==6.0.3
+# Optional crawl parsers/browser: see requirements-crawl.txt (not core runtime).
+
+# Hosted intent exemplar cosine scoring
+numpy==2.5.4

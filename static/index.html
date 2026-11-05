@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="color-scheme" content="light" />
+  <meta name="theme-color" content="#FCFCFC" />
+  <meta name="description" content="会记住你、陪你练的 Q 版运动搭子：记录饮食和运动，算今日热量差，按周推送。" />
+  <link rel="manifest" href="/static/manifest.webmanifest" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="运动搭子" />
+  <link rel="apple-touch-icon" href="/static/icons/icon-192.png" />
+  <meta name="app-version" content="__APP_VERSION__" />
+  <title>运动搭子 · 阿动</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%23191919'/%3E%3Ctext x='16' y='22' font-size='16' text-anchor='middle' fill='white' font-family='sans-serif'%3E%E5%8A%A9%3C/text%3E%3C/svg%3E" />
+  <link rel="preload" href="/static/fonts/Geist-Variable.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="stylesheet" href="/static/design.css?v=__APP_VERSION__" />
+  <link rel="stylesheet" href="/static/chat.css?v=__APP_VERSION__" />
+  <script type="module" src="/static/js/app.js?v=__APP_VERSION__"></script>
+</head>
+<body class="app chat-app">
+  <a class="skip-link" href="#composerInput">跳到输入框</a>
+
+  <header class="app-header chat-header">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">动</span>
+      <h1>运动搭子</h1>
+    </div>
+    <div class="debug-badges debug-only" id="debugBadges" aria-label="调试信息"></div>
+    <span class="header-spacer"></span>
+    <div class="header-actions">
+      <button type="button" class="btn btn-quiet btn-sm header-btn" id="btnMemory" aria-label="我记得的">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4h12a1 1 0 011 1v16l-7-4-7 4V5a1 1 0 011-1z"/></svg>
+        <span class="header-btn-label">记忆</span>
+      </button>
+      <button type="button" class="btn btn-ghost btn-sm header-btn" id="btnSchedules" aria-label="定时任务" aria-expanded="false" aria-controls="schedulesPanel">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+        <span class="header-btn-label">定时</span>
+      </button>
+      <button type="button" class="btn btn-ghost btn-sm header-btn" id="btnProfile" aria-label="我的个人档案" aria-expanded="false" aria-controls="drawer">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>
+        <span class="header-btn-label">档案</span>
+      </button>
+    </div>
+  </header>
+
+  <div class="layout">
+    <main class="chat-main" id="main">
+      <div class="log-scroll" id="logScroll">
+        <div class="log" id="log" role="log" aria-live="off" aria-label="对话记录"></div>
+      </div>
+
+      <form class="composer" id="composer" autocomplete="off">
+        <button type="button" class="jump-latest" id="jumpLatest" hidden>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14"/><path d="M19 12l-7 7-7-7"/></svg>
+          新消息
+        </button>
+        <div class="composer-inner">
+          <div class="composer-shell" id="composerShell">
+            <label class="sr-only" for="composerInput">给阿动发消息</label>
+            <textarea id="composerInput" rows="1" enterkeyhint="send"
+              placeholder="和我聊聊，或者说「今天跑了 5 公里」"
+              aria-describedby="composerHint"></textarea>
+            <button type="submit" class="btn btn-primary btn-send" id="btnSend" aria-label="发送">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg>
+            </button>
+          </div>
+          <div class="composer-error" id="composerError" role="alert" hidden></div>
+          <div class="composer-hint" id="composerHint">
+            <span id="composerHintKeys">Enter 发送 · Shift + Enter 换行</span>
+            <span class="hint-right">训练记录会存进你的运动日志</span>
+          </div>
+        </div>
+      </form>
+    </main>
+
+    <aside class="drawer" id="drawer" aria-labelledby="drawerTitle" inert>
+      <div class="drawer-inner">
+        <div class="drawer-head">
+          <h2 id="drawerTitle">我的个人档案</h2>
+          <button type="button" class="btn-icon" id="btnDrawerClose" aria-label="收起档案">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg>
+          </button>
+        </div>
+        <div class="drawer-body" id="drawerBody"></div>
+        <section class="drawer-section drawer-account" aria-labelledby="accountTitle">
+          <h3 class="drawer-section-title" id="accountTitle">账号与本机数据</h3>
+          <label class="dw-field-label debug-only" for="userId">User ID</label>
+          <input class="field-input debug-only" id="userId" value="" readonly spellcheck="false" autocapitalize="off" aria-describedby="userIdHint" />
+          <p class="dw-note debug-only" id="userIdHint">由服务器会话决定，只读。</p>
+          <div class="dw-account-actions">
+            <button type="button" class="btn btn-ghost btn-sm" id="btnClearLocal">清除本机对话记录</button>
+          </div>
+          <p class="dw-note">档案保存在服务端；对话记录只保存在这台设备的浏览器里。</p>
+          <p class="dw-version">运动搭子 · Personal Agent v__APP_VERSION__</p>
+        </section>
+      </div>
+    </aside>
+  </div>
+
+  <div class="backdrop" id="backdrop"></div>
+
+  <div class="toast-wrap" id="toastWrap" role="status" aria-live="polite"></div>
+  <div class="sr-only" id="srAnnounce" aria-live="polite" aria-atomic="true"></div>
+
+  <dialog id="schedulesPanel" class="schedules-panel" aria-labelledby="schedulesTitle">
+    <div class="drawer-head">
+      <h2 id="schedulesTitle">定时任务</h2>
+      <button type="button" class="btn btn-ghost btn-sm" id="btnSchedulesClose" aria-label="关闭定时任务">关闭</button>
+    </div>
+    <div id="schedulesBody" class="drawer-body"></div>
+  </dialog>
+  <noscript>
+    <p class="noscript">需要开启 JavaScript 才能和阿动对话。</p>
+  </noscript>
+</body>
+</html>

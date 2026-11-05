@@ -1,0 +1,21 @@
+{
+  "profile_main": {
+    "name": "李明",
+    "city": "上海",
+    "tz": "Asia/Shanghai",
+    "occupation": "后端工程师",
+    "interests": ["跑步", "摄影"],
+    "preferences": ["早上九点前不要打扰", "周末尽量不安排会议"],
+    "facts": ["在星河数据科技有限公司负责 Agent 编排服务", "下周三去杭州出差", "正在学 Kubernetes"]
+  },
+  "profile_other": {
+    "name": "欧阳雪晴",
+    "city": "北京",
+    "occupation": "产品经理",
+    "interests": ["爬山"],
+    "preferences": ["晚上不要打电话"],
+    "facts": ["在云栖网络科技负责订单系统", "电话 13987654321", "邮箱 ouyang.xueqing@example.com"]
+  },
+  "draft_request": "帮我写一封请假邮件，周五请一天假去看医生，发给我的主管王经理",
+  "draft_request_message": "帮我写一条消息，告诉房东这个月房租会晚两天交"
+}

@@ -1,0 +1,7 @@
+{
+  "schema_version": 1,
+  "name": "training-coach",
+  "version": "1.0.0",
+  "description": "运动搭子的训练指导边界：渐进超负荷、RPE、恢复与伤病分流。",
+  "intents": ["chat"]
+}

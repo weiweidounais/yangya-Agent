@@ -1,0 +1,11 @@
+sequenceDiagram
+  participant U as 你
+  participant C as 微信/飞书/网页
+  participant S as Personal Agent
+  U->>C: 帮我写一封请假邮件
+  C->>S: 同一个助理
+  S-->>C: 草稿预览 + 确认卡
+  C-->>U: 请确认（可改字、可拒绝）
+  U->>C: 点确认
+  C->>S: 定稿并写入记忆
+  S-->>C: 已确认，完整正文

@@ -1,0 +1,9 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>管理控制台 · Personal Agent</title><link rel="stylesheet" href="/admin/admin.css"><script defer src="/admin/admin.js"></script></head>
+<body>
+<section id="login" class="login" hidden><form id="login-form"><small>PERSONAL AGENT / ADMIN</small><h1>管理控制台</h1><p>使用管理员令牌登录。令牌仅保存在当前标签页。</p><label>管理员令牌<input id="token" type="password" autocomplete="off" required></label><button type="submit">登录</button><p id="login-error" role="alert"></p></form></section>
+<div id="console" hidden><aside class="nav"><strong>Personal Agent</strong><small>管理控制台</small><nav id="nav"></nav><span id="principal"></span><button id="logout">退出登录</button></aside><main><header><div><small>ADMIN CONSOLE / PHASE 1</small><h1 id="title">总览</h1></div><span class="badge">管理工作区</span></header><p id="message" role="status"></p><div id="content"></div></main></div>
+<dialog id="drawer" class="drawer"><button id="close-drawer" class="close" aria-label="关闭详情">关闭</button><div id="detail"></div></dialog>
+<dialog id="confirm"><form method="dialog"><h2>确认操作</h2><p id="confirm-text"></p><label>请输入「确认」<input id="confirm-input" autocomplete="off"></label><div class="actions"><button value="cancel" formnovalidate>取消</button><button id="confirm-ok" value="yes" class="danger" disabled>确认执行</button></div></form></dialog>
+</body></html>

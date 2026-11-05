@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="referrer" content="no-referrer" />
+  <meta name="robots" content="noindex" />
+  <title>绑定个人档案 · 运动搭子</title>
+  <link rel="stylesheet" href="/static/design.css?v=__APP_VERSION__" />
+  <style>
+    body { display: flex; justify-content: center; padding: 48px 16px; background: var(--bg); color: var(--text); }
+    .panel { width: 100%; max-width: 420px; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 28px; }
+    h1 { font-size: 20px; margin: 0 0 8px; }
+    p { color: var(--text-secondary); line-height: 1.6; margin: 0 0 16px; }
+    .btn { width: 100%; margin-top: 20px; }
+    .msg { margin-top: 16px; font-size: 14px; line-height: 1.6; }
+    .msg.err { color: var(--error-text); }
+    .msg.ok { color: var(--success-text); }
+    .note { font-size: 12px; color: var(--text-tertiary); margin-top: 18px; }
+  </style>
+</head>
+<body>
+  <main class="panel">
+    <h1>绑定个人档案</h1>
+    <p id="intro">正在检查链接…</p>
+    <button class="btn btn-primary" type="button" id="submit" hidden>确认绑定</button>
+    <div class="msg" id="msg" role="status" aria-live="polite"></div>
+    <p class="note">绑定后，聊天窗口和这个浏览器里的网页版用同一份个人档案。请用你常用的浏览器打开本链接。</p>
+  </main>
+  <script>
+    // Never show a raw account id on screen (server already masks; this is belt and braces).
+    function maskId(v) {
+      const s = String(v || "");
+      if (s.includes("*")) return s;
+      return s.length <= 4 ? "****" : `${s.slice(0, 2)}***${s.slice(-2)}`;
+    }
+    const token = new URLSearchParams(location.search).get("t") || "";
+    const $ = (id) => document.getElementById(id);
+    const show = (text, kind) => { $("msg").textContent = text; $("msg").className = "msg " + (kind || ""); };
+    const errText = (data, fallback) => {
+      const d = data && data.detail;
+      return (d && (d.message || (typeof d === "string" ? d : ""))) || fallback;
+    };
+
+    async function init() {
+      if (!token) { $("intro").textContent = "链接不完整，请回到聊天窗口回复「绑定」重新获取。"; return; }
+      const r = await fetch(`/api/channels/link?purpose=bind&t=${encodeURIComponent(token)}`);
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok) { $("intro").textContent = errText(data, "链接已失效，请回到聊天窗口回复「绑定」重新获取。"); return; }
+      // Reuse this browser's session, or start one, so the channel joins the same profile.
+      const s = await fetch("/api/session", { method: "POST" });
+      if (!s.ok) { $("intro").textContent = "暂时无法建立会话，请稍后刷新重试。"; return; }
+      const who = data.display_name ? `（${data.display_name}）` : "";
+      $("intro").textContent = `确认后，你的${data.channel_label}账号${who}会和这个浏览器里的个人档案关联。`;
+      $("submit").hidden = false;
+    }
+
+    $("submit").addEventListener("click", async () => {
+      $("submit").disabled = true;
+      show("正在绑定…");
+      try {
+        const r = await fetch("/api/channels/bind/complete", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token }),
+        });
+        const data = await r.json().catch(() => ({}));
+        if (!r.ok) { show(errText(data, "绑定失败，请重试"), "err"); $("submit").disabled = false; return; }
+        $("submit").hidden = true;
+        show(`绑定成功：已关联个人档案 ${maskId(data.user_id)}。现在可以回到${data.channel_label}继续聊了。`, "ok");
+      } catch (e) {
+        show("网络异常，请重试", "err");
+        $("submit").disabled = false;
+      }
+    });
+
+    init();
+  </script>
+</body>
+</html>

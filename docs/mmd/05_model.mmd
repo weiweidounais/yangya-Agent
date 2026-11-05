@@ -1,0 +1,6 @@
+flowchart LR
+  TASK[来了一个任务] --> JUDGE{"难不难?"}
+  JUDGE -->|简单| FAST["快模型<br/>DeepSeek / Kimi K2.6"]
+  JUDGE -->|很难| STRONG["强模型<br/>Kimi K3"]
+  FAST --> OUT[更快出结果]
+  STRONG --> OUT2[更稳、更认真]

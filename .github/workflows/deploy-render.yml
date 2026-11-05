@@ -1,0 +1,61 @@
+# Manually redeploy on Render when RENDER_API_KEY is set in repo secrets — only after the
+# harness gate (unit + golden, safety zero-fail) passed for the same commit.
+# Without the secret, the deploy job skips (no-op). Blueprint one-click still works without this.
+#
+# render.yaml sets `autoDeploy: false` to disable automatic deploys on push.
+name: Deploy Render
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  gate:
+    uses: ./.github/workflows/harness-golden.yml
+    with:
+      live: false
+
+  deploy:
+    needs: gate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Render secrets
+        id: check
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          RENDER_SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID }}
+        run: |
+          if [ -z "$RENDER_API_KEY" ]; then
+            echo "has_key=false" >> "$GITHUB_OUTPUT"
+            echo "No RENDER_API_KEY secret — skip deploy (use https://render.com/deploy?repo=<your GitHub repo> )"
+          else
+            echo "has_key=true" >> "$GITHUB_OUTPUT"
+          fi
+          if [ -n "$RENDER_SERVICE_ID" ]; then
+            echo "has_service=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_service=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Trigger Render deploy (gated commit)
+        if: steps.check.outputs.has_key == 'true' && steps.check.outputs.has_service == 'true'
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          RENDER_SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID }}
+          COMMIT_ID: ${{ github.sha }}
+        run: |
+          curl -fsS -X POST \
+            "https://api.render.com/v1/services/${RENDER_SERVICE_ID}/deploys" \
+            -H "Authorization: Bearer ${RENDER_API_KEY}" \
+            -H "Accept: application/json" \
+            -H "Content-Type: application/json" \
+            -d "{\"clearCache\":\"do_not_clear\",\"commitId\":\"${COMMIT_ID}\"}"
+          echo "Deploy triggered for service ${RENDER_SERVICE_ID} at ${COMMIT_ID}"
+
+      - name: Skip notice
+        if: steps.check.outputs.has_key != 'true' || steps.check.outputs.has_service != 'true'
+        run: |
+          echo "Skipped manual Render deploy."
+          echo "One-click Blueprint: https://render.com/deploy?repo=<your GitHub repo>"

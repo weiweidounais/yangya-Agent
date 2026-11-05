@@ -1,0 +1,85 @@
+# Render Blueprint — one-click: https://render.com/deploy?repo=<your GitHub repo>
+# Docs: docs/deploy.md
+services:
+  - type: web
+    name: personal-agent
+    runtime: docker
+    # Free plan has no persistent disk: DATA_DIR (/app/data, all SQLite data) is wiped
+    # on every redeploy/restart. Demo only. For real users switch to a paid plan and add
+    #   disk: {name: data, mountPath: /app/data, sizeGB: 1}
+    plan: free
+    region: oregon
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    autoDeploy: false
+    envVars:
+      # --- LLM (at least one key required for live chat; else mock) ---
+      - key: KIMI_API_KEY
+        sync: false
+      - key: MOONSHOT_API_KEY
+        sync: false
+      - key: DEEPSEEK_API_KEY
+        sync: false
+      - key: LLM_FAST_BASE_URL
+        value: https://api.moonshot.cn/v1
+      - key: LLM_FAST_MODEL
+        value: kimi-k2.6
+      - key: LLM_FAST_API_KEY
+        sync: false
+      - key: LLM_STRONG_BASE_URL
+        value: https://api.moonshot.cn/v1
+      - key: LLM_STRONG_MODEL
+        value: kimi-k3
+      - key: LLM_STRONG_API_KEY
+        sync: false
+      - key: LLM_STRONG_FALLBACK_MODEL
+        value: kimi-k2.6
+      - key: MODEL_FAST
+        value: kimi-k2.6
+      - key: MODEL_STRONG
+        value: kimi-k3
+      - key: KIMI_K3_EFFORT
+        value: low
+      # --- App ---
+      - key: DATA_DIR
+        value: /app/data
+      - key: CORS_ALLOW_ORIGINS
+        value: "*"
+      - key: HOST
+        value: "0.0.0.0"
+      # --- Auth (required: without AUTH_SECRET every /api call returns 503) ---
+      - key: AUTH_SECRET
+        generateValue: true
+      # Stable user/thread pseudonyms in traces (else a random key per container)
+      - key: HARNESS_ID_HMAC_KEY
+        generateValue: true
+      # Admin APIs (traces / audit / proactive tick); unset = admin APIs return 503
+      - key: HARNESS_ADMIN_TOKENS
+        sync: false
+      # --- Secret sandbox (Fernet key; set in the dashboard, never commit) ---
+      - key: SECRETS_FERNET_KEY
+        sync: false
+      # --- Channels (docs/channels.md); both off by default ---
+      - key: PUBLIC_BASE_URL
+        sync: false
+      - key: CHANNEL_ADMIN_TOKEN
+        sync: false
+      - key: FEISHU_ENABLED
+        value: "0"
+      - key: FEISHU_APP_ID
+        sync: false
+      - key: FEISHU_APP_SECRET
+        sync: false
+      - key: FEISHU_VERIFICATION_TOKEN
+        sync: false
+      - key: FEISHU_ENCRYPT_KEY
+        sync: false
+      - key: OPENCLAW_WECHAT_ENABLED
+        value: "0"
+      - key: OPENCLAW_WEBHOOK_TOKEN
+        sync: false
+      - key: OPENCLAW_GATEWAY_URL
+        sync: false
+      - key: OPENCLAW_GATEWAY_TOKEN
+        sync: false

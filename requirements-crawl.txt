@@ -1,0 +1,5 @@
+# Optional Python 3.10-compatible crawler extras. Install separately from the
+# application's constraints; see app/crawl/README.md.
+trafilatura==1.12.2
+feedparser==6.0.11
+crawl4ai==0.6.3

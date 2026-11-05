@@ -1,0 +1,39 @@
+flowchart TB
+  subgraph L1["① 入口层 — 用户从哪说话"]
+    WEB[网页]
+    WX[微信]
+    FS[飞书]
+    QQ[QQ]
+  end
+  subgraph L2["② Agent 大脑 — 怎么处理"]
+    API[对话与接口]
+    FLOW["编排引擎<br/>到确认点就停住"]
+  end
+  subgraph L3["③ 工具 — 具体能干的事"]
+    T1[写草稿]
+    T2[记忆读写]
+    T3[定时提醒]
+    T4[联网读取]
+  end
+  subgraph L4["④ 记忆 — 它记得什么"]
+    M1[个人档案]
+    M2[对话与事件]
+  end
+  subgraph L5["⑤ 模型 — 谁来写字思考"]
+    FAST["快模型<br/>少等一会儿"]
+    STRONG["强模型<br/>难活认真做"]
+  end
+  WEB --> API
+  WX --> API
+  FS --> API
+  QQ --> API
+  API --> FLOW
+  FLOW --> T1
+  FLOW --> T2
+  FLOW --> T3
+  FLOW --> T4
+  FLOW --> M1
+  FLOW --> M2
+  T1 --> FAST
+  T1 --> STRONG
+  T4 --> FAST

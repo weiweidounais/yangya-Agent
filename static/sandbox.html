@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="referrer" content="no-referrer" />
+  <meta name="robots" content="noindex" />
+  <title>网页安全通道 · 运动搭子</title>
+  <link rel="stylesheet" href="/static/design.css?v=__APP_VERSION__" />
+  <style>
+    body { display: flex; justify-content: center; padding: 48px 16px; background: var(--bg); color: var(--text); }
+    .panel { width: 100%; max-width: 640px; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 28px; }
+    h1 { font-size: 20px; margin: 0 0 8px; }
+    h2 { font-size: 15px; margin: 20px 0 8px; }
+    p { color: var(--text-secondary); line-height: 1.6; margin: 0 0 16px; }
+    label { display: block; font-size: 13px; color: var(--text-secondary); margin: 14px 0 6px; }
+    .field-input { width: 100%; box-sizing: border-box; }
+    textarea.field-input { min-height: 140px; resize: vertical; font: inherit; }
+    .btn { margin-top: 20px; }
+    .msg { margin-top: 16px; font-size: 14px; line-height: 1.6; }
+    .msg.err { color: var(--error-text); }
+    .msg.ok { color: var(--success-text); }
+    .draft-kind { display: inline-block; padding: 2px 10px; border-radius: 999px; background: var(--surface-alt); border: 1px solid var(--border); font-size: 12px; color: var(--text-secondary); margin-bottom: 10px; }
+    .draft-title { font-size: 16px; font-weight: 600; margin: 0 0 10px; color: var(--text); }
+    .draft-body { white-space: pre-wrap; overflow-wrap: anywhere; background: var(--surface-alt); border: 1px solid var(--border); border-radius: 12px; padding: 14px; line-height: 1.6; font: inherit; }
+    .draft-notes { margin: 12px 0 0; padding-left: 20px; font-size: 13px; color: var(--text-secondary); line-height: 1.6; }
+    .decision { margin-top: 14px; font-size: 13px; color: var(--text-secondary); }
+    .note { font-size: 12px; color: var(--text-tertiary); margin-top: 18px; }
+  </style>
+</head>
+<body>
+  <main class="panel">
+    <h1>网页安全通道</h1>
+    <p id="intro">正在检查链接…</p>
+
+    <form id="form" hidden>
+      <label for="name">姓名（可选）</label>
+      <input class="field-input" id="name" autocomplete="name" />
+      <label for="city">城市（可选）</label>
+      <input class="field-input" id="city" autocomplete="address-level2" />
+      <label for="phone">手机号（可选）</label>
+      <input class="field-input" id="phone" inputmode="tel" autocomplete="tel" />
+      <label for="email">邮箱（可选）</label>
+      <input class="field-input" id="email" type="email" autocomplete="email" />
+      <label for="facts">备注（可选，一行一条）</label>
+      <textarea class="field-input" id="facts" placeholder="比如：下周三出差&#10;家里有一只猫"></textarea>
+      <button class="btn btn-primary" type="submit" id="submit">安全提交</button>
+    </form>
+
+    <section id="draft" hidden>
+      <span class="draft-kind" id="draftKind"></span>
+      <h2 class="draft-title" id="draftTitle" hidden></h2>
+      <div class="draft-body" id="draftBody"></div>
+      <ul class="draft-notes" id="draftNotes" hidden></ul>
+      <p class="decision" id="draftDecision" hidden></p>
+      <p>看完后回到聊天窗口点「确认」或「拒绝」。</p>
+    </section>
+
+    <div class="msg" id="msg" role="status" aria-live="polite"></div>
+    <p class="note">这里填写的内容只保存在服务端的个人档案里，不会发到飞书 / 微信聊天中。链接一次有效。</p>
+  </main>
+  <script>
+    const token = new URLSearchParams(location.search).get("t") || "";
+    const purpose = new URLSearchParams(location.search).get("purpose") || "";
+    const $ = (id) => document.getElementById(id);
+    const show = (text, kind) => { $("msg").textContent = text; $("msg").className = "msg " + (kind || ""); };
+    const errText = (data, fallback) => {
+      const d = data && data.detail;
+      return (d && (d.message || (typeof d === "string" ? d : ""))) || fallback;
+    };
+    const expired = "链接已失效，请回到聊天窗口重新获取。";
+    const KINDS = { email: "邮件", message: "消息", article: "文章", note: "笔记", other: "草稿" };
+    const DECISIONS = (d) => !d ? "" : d.confirmed ? "这份草稿已经确认定稿。" : "这份草稿已被拒绝。";
+
+    async function initDraft() {
+      const r = await fetch(`/api/sandbox/draft?t=${encodeURIComponent(token)}`);
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok) return false;
+      $("intro").textContent = "这是本次的完整草稿，只在网页里展示。";
+      $("draftKind").textContent = KINDS[String(data.kind || "other").toLowerCase()] || KINDS.other;
+      if (data.title) { $("draftTitle").textContent = data.title; $("draftTitle").hidden = false; }
+      $("draftBody").textContent = data.body || "（无）";
+      const notes = Array.isArray(data.notes) ? data.notes.filter(Boolean) : [];
+      if (notes.length) {
+        for (const n of notes) {
+          const li = document.createElement("li");
+          li.textContent = String(n);
+          $("draftNotes").appendChild(li);
+        }
+        $("draftNotes").hidden = false;
+      }
+      const decision = DECISIONS(data.decision);
+      if (decision) { $("draftDecision").textContent = decision; $("draftDecision").hidden = false; }
+      $("draft").hidden = false;
+      return true;
+    }
+
+    async function initSandbox() {
+      const r = await fetch(`/api/channels/link?purpose=sandbox&t=${encodeURIComponent(token)}`);
+      if (!r.ok) return false;
+      const data = await r.json();
+      $("intro").textContent = `在这里填写的隐私信息只进入你的个人档案；提交后会在${data.channel_label}里通知你（不含隐私内容）。`;
+      $("form").hidden = false;
+      return true;
+    }
+
+    async function init() {
+      if (!token) { $("intro").textContent = expired; return; }
+      if (purpose === "draft") {
+        if (await initDraft()) return;
+      } else if (purpose === "sandbox") {
+        if (await initSandbox()) return;
+      } else {
+        if (await initSandbox()) return;
+        if (await initDraft()) return;
+      }
+      $("intro").textContent = expired;
+    }
+
+    $("form").addEventListener("submit", async (ev) => {
+      ev.preventDefault();
+      $("submit").disabled = true;
+      show("正在提交…");
+      try {
+        const r = await fetch("/api/sandbox/submit", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            token,
+            name: $("name").value,
+            city: $("city").value,
+            phone: $("phone").value,
+            email: $("email").value,
+            facts: $("facts").value,
+          }),
+        });
+        const data = await r.json().catch(() => ({}));
+        if (!r.ok) { show(errText(data, "提交失败，请重试"), "err"); $("submit").disabled = r.status === 410; return; }
+        $("form").hidden = true;
+        show(`已安全保存：${(data.updated || []).join("、")}。可以回到聊天窗口继续了。`, "ok");
+      } catch (e) {
+        show("网络异常，请重试", "err");
+        $("submit").disabled = false;
+      }
+    });
+
+    init();
+  </script>
+</body>
+</html>

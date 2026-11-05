@@ -1,0 +1,28 @@
+{
+  "id": "personal-agent-bridge",
+  "name": "Personal Agent Bridge",
+  "activation": { "onStartup": true },
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "agentUrl": {
+        "type": "string",
+        "description": "Base URL of personal-agent, e.g. http://127.0.0.1:8787"
+      },
+      "token": {
+        "type": "string",
+        "description": "Must equal OPENCLAW_WEBHOOK_TOKEN on personal-agent"
+      },
+      "channels": {
+        "type": "array",
+        "items": { "type": "string" },
+        "description": "Channel ids to bridge (default: openclaw-weixin, weixin, wechat)"
+      },
+      "syncWaitSeconds": {
+        "type": "number",
+        "description": "Seconds the service waits before acking and pushing the reply later (default 12)"
+      }
+    }
+  }
+}

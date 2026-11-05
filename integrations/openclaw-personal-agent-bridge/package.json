@@ -1,0 +1,13 @@
+{
+  "name": "openclaw-personal-agent-bridge",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "OpenClaw plugin: route WeChat (openclaw-weixin) messages to personal-agent",
+  "openclaw": {
+    "extensions": ["./index.ts"]
+  },
+  "peerDependencies": {
+    "openclaw": ">=2026.5.0"
+  }
+}

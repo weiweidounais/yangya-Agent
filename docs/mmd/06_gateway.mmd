@@ -1,0 +1,24 @@
+flowchart TB
+  subgraph CH["各入口"]
+    WEB2[网页]
+    WX2[微信服务号/小程序]
+    FS2[飞书机器人]
+    QQ2[QQ 机器人]
+  end
+  subgraph GW["统一网关（设计中，第一期可先做飞书）"]
+    V[验是不是真的官方回调]
+    ID["把渠道用户<br/>绑到同一个账号"]
+    N["收成同一种入站消息"]
+    R["把确认卡画成各 App 按钮"]
+  end
+  BRAIN["助理大脑<br/>含定稿前确认"]
+  WEB2 --> V
+  WX2 --> V
+  FS2 --> V
+  QQ2 --> V
+  V --> ID --> N --> BRAIN
+  BRAIN --> R
+  R --> WEB2
+  R --> WX2
+  R --> FS2
+  R --> QQ2

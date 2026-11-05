@@ -1,0 +1,55 @@
+{
+  "providers": {
+    "moonshot": {
+      "protocol": "openai",
+      "base_url": "https://api.moonshot.cn/v1",
+      "api_key_env": "KIMI_API_KEY,MOONSHOT_API_KEY",
+      "max_concurrency": 4
+    },
+    "deepseek": {
+      "protocol": "openai",
+      "base_url": "https://api.deepseek.com/v1",
+      "api_key_env": "DEEPSEEK_API_KEY",
+      "max_concurrency": 8
+    },
+    "anthropic": {
+      "protocol": "anthropic",
+      "base_url": "https://api.anthropic.com",
+      "api_key_env": "ANTHROPIC_API_KEY",
+      "max_concurrency": 4
+    }
+  },
+  "models": {
+    "kimi-k2.6": {
+      "provider": "moonshot",
+      "model": "kimi-k2.6",
+      "price": {"input": 4.0, "output": 16.0, "currency": "CNY"}
+    },
+    "kimi-k3": {
+      "provider": "moonshot",
+      "model": "kimi-k3",
+      "price": {"input": 8.0, "output": 32.0, "currency": "CNY"}
+    },
+    "deepseek-chat": {
+      "provider": "deepseek",
+      "model": "deepseek-chat",
+      "price": {"input": 2.0, "output": 8.0, "currency": "CNY"}
+    },
+    "claude-sonnet": {
+      "provider": "anthropic",
+      "model": "claude-sonnet-4-5",
+      "max_tokens": 2048,
+      "timeout": 60,
+      "price": {"input": 3.0, "output": 15.0, "currency": "USD"}
+    }
+  },
+  "tiers": {
+    "fast": ["kimi-k2.6", "deepseek-chat"],
+    "strong": ["kimi-k3", "claude-sonnet", "kimi-k2.6"]
+  },
+  "tasks": {
+    "risk_classify": "fast",
+    "summary": "fast",
+    "draft": "strong"
+  }
+}

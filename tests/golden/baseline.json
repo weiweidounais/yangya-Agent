@@ -1,0 +1,8 @@
+{
+  "mock": {
+    "quality_pass_rate": 1.0
+  },
+  "live": {
+    "quality_pass_rate": 0.9
+  }
+}

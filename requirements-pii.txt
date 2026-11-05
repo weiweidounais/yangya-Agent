@@ -1,0 +1,10 @@
+# Optional ML backends (not installed in the default image / CI).
+#   PII_BACKEND=presidio  -> presidio + spaCy Chinese model
+#   PII_BACKEND=gliner    -> GLiNER multilingual PII model (downloads weights on first use)
+#   PROMPT_LEAK_EMBEDDINGS=sentence-transformers -> multilingual paraphrase embeddings
+# Without them the regex / lexicon fallbacks are used.
+presidio-analyzer==2.2.364
+spacy==3.8.16
+# python -m spacy download zh_core_web_sm
+gliner==0.2.29
+sentence-transformers==6.1.0

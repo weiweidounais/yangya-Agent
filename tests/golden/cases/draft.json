@@ -1,0 +1,75 @@
+[
+  {
+    "id": "draft_email_confirm_card",
+    "category": "draft",
+    "description": "写作请求走聊天入口 → 草稿卡等待确认，正文来自离线草稿且署名用档案姓名",
+    "modes": ["mock"],
+    "steps": [
+      {"op": "profile", "profile": "@fixture:profile_main"},
+      {
+        "op": "chat",
+        "message": "@fixture:draft_request",
+        "expect": {
+          "status": "awaiting_confirm",
+          "awaiting_confirm": true,
+          "paths_match": {"data.task_card.type": "draft_confirm", "data.draft.kind": "email"},
+          "paths_exist": ["data.draft.body", "data.confirm_actions"],
+          "draft_contains": ["【离线草稿】", "李明"],
+          "reply_contains_any": ["草稿写好了", "请在确认卡上看看"]
+        }
+      }
+    ]
+  },
+  {
+    "id": "draft_reject_redraft_confirm",
+    "category": "draft",
+    "description": "拒绝 → 自动重出稿 → 再确认",
+    "steps": [
+      {"op": "profile", "profile": "@fixture:profile_main"},
+      {"op": "draft", "request": "@fixture:draft_request", "expect": {"status": "awaiting_confirm"}},
+      {
+        "op": "confirm",
+        "confirmed": false,
+        "expect": {"status": "awaiting_confirm", "awaiting_confirm": true, "paths_min": {"data.loop.redraft_count": 1}}
+      },
+      {
+        "op": "confirm",
+        "confirmed": true,
+        "expect": {"status": "confirmed", "awaiting_confirm": false, "reply_contains_any": ["已确认"]}
+      }
+    ]
+  },
+  {
+    "id": "draft_user_edit_kept",
+    "category": "draft",
+    "description": "用户在确认卡上编辑的正文原样定稿",
+    "judge": false,
+    "steps": [
+      {"op": "draft", "request": "@fixture:draft_request_message"},
+      {
+        "op": "confirm",
+        "confirmed": true,
+        "edits": {"body": "房东您好，这个月房租我会在 5 号前转过去，晚两天，麻烦您了。"},
+        "expect": {"status": "confirmed", "draft_contains": ["房租我会在 5 号前转过去"]}
+      }
+    ]
+  },
+  {
+    "id": "draft_empty_request_asks",
+    "category": "draft",
+    "description": "空的写作请求 → 400，不建卡",
+    "steps": [
+      {"op": "draft", "request": "   ", "expect": {"http_status": 400}}
+    ]
+  },
+  {
+    "id": "draft_confirm_foreign_thread_404",
+    "category": "draft",
+    "description": "确认别人的线程 → 404，不留决定记录",
+    "steps": [
+      {"op": "draft", "request": "@fixture:draft_request", "expect": {"status": "awaiting_confirm"}},
+      {"op": "confirm", "confirmed": true, "as": "other", "expect": {"http_status": 404}},
+      {"op": "confirm", "confirmed": true, "expect": {"status": "confirmed"}}
+    ]
+  }
+]

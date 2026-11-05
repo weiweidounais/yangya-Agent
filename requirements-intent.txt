@@ -1,0 +1,3 @@
+# SiliconFlow hybrid scoring uses the base HTTP client and NumPy; no local models.
+-r requirements.txt
+-c requirements.lock

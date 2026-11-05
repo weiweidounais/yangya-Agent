@@ -1,0 +1,30 @@
+{
+  "mode": "mock",
+  "k": 6,
+  "users": 3,
+  "questions": 144,
+  "facts_per_user": 12,
+  "old_recall_at_k": 0.4583333333333333,
+  "hybrid_recall_at_k": 1.0,
+  "per_user": [
+    {
+      "user": "synthetic-A",
+      "questions": 48,
+      "old_hits": 22,
+      "hybrid_hits": 48
+    },
+    {
+      "user": "synthetic-B",
+      "questions": 48,
+      "old_hits": 22,
+      "hybrid_hits": 48
+    },
+    {
+      "user": "synthetic-C",
+      "questions": 48,
+      "old_hits": 22,
+      "hybrid_hits": 48
+    }
+  ],
+  "limitation": "Synthetic synonym oracle; not evidence of live model quality."
+}

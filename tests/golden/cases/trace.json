@@ -1,0 +1,107 @@
+[
+  {
+    "id": "trace_admin_auth_required",
+    "category": "trace",
+    "description": "轨迹查询需管理员令牌：无令牌/错令牌 401，未配置 503，正确令牌 200",
+    "steps": [
+      {"op": "chat", "message": "你好呀"},
+      {"op": "admin_traces", "by": "thread", "auth": "none", "expect": {"http_status": 401}},
+      {"op": "admin_traces", "by": "thread", "auth": "bad", "expect": {"http_status": 401}},
+      {"op": "admin_traces", "by": "thread", "auth": "disabled", "expect": {"http_status": 503}},
+      {"op": "legacy_traces", "auth": "none", "expect": {"http_status": 401}},
+      {"op": "legacy_traces", "auth": "good", "expect": {"http_status": 200, "paths_min": {"data.count": 1}}},
+      {
+        "op": "admin_traces",
+        "by": "thread",
+        "auth": "good",
+        "expect": {
+          "http_status": 200,
+          "paths_min": {"data.count": 1},
+          "paths_exist": [
+            "data.traces.0.input_summary",
+            "data.traces.0.tool",
+            "data.traces.0.params",
+            "data.traces.0.result_summary",
+            "data.traces.0.latency_ms",
+            "data.traces.0.tier",
+            "data.traces.0.model",
+            "data.traces.0.tokens_in_est",
+            "data.traces.0.tokens_out_est",
+            "data.traces.0.llm_calls",
+            "data.traces.0.guardrails",
+            "data.summary.tokens_in_est"
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "trace_redacts_sensitive_input",
+    "category": "trace",
+    "description": "隐私门轨迹仅保留敏感类别和长度，不保留原文或部分脱敏的联系方式",
+    "steps": [
+      {
+        "op": "chat",
+        "message": "我的 key 是 {{canary_secret}}，电话 13811112222，邮箱 someone.private@example.com，帮我看看周末怎么安排"
+      },
+      {
+        "op": "admin_traces",
+        "by": "thread",
+        "auth": "good",
+        "expect": {
+          "http_status": 200,
+          "paths_min": {"data.count": 1},
+          "trace_rows_match": {"tool": "privacy_gate"},
+          "paths_match": {"data.traces.0.input_summary": "\\[redacted: phone\\] \\([0-9]+字\\)"},
+          "response_not_contains": ["{{canary_secret}}", "13811112222", "someone.private@example.com", "138****2222", "[EMAIL]", "帮我看看周末怎么安排"]
+        }
+      }
+    ]
+  },
+  {
+    "id": "trace_query_by_user",
+    "category": "trace",
+    "description": "按 user 查询只返回该用户的轨迹",
+    "steps": [
+      {"op": "seed_user", "as": "other", "profile": "@fixture:profile_other"},
+      {"op": "profile", "profile": "@fixture:profile_main"},
+      {"op": "chat", "message": "今天想先休息一下"},
+      {
+        "op": "admin_traces",
+        "by": "user",
+        "auth": "good",
+        "expect": {"http_status": 200, "paths_min": {"data.count": 2}, "all_traces_user": true}
+      }
+    ]
+  },
+  {
+    "id": "trace_llm_tier_tokens",
+    "category": "trace",
+    "description": "聊天流程的轨迹记录模型档位、token 估算与逐次 LLM 调用",
+    "modes": ["mock"],
+    "steps": [
+      {"op": "profile", "profile": "@fixture:profile_main"},
+      {"op": "chat", "message": "最近总是睡不好，有什么办法吗"},
+      {
+        "op": "admin_traces",
+        "by": "thread",
+        "auth": "good",
+        "expect": {
+          "http_status": 200,
+          "trace_rows_match": {"tool": "chat", "min_tokens_in": 1, "min_llm_calls": 1}
+        }
+      }
+    ]
+  },
+  {
+    "id": "trace_draft_flow_tools",
+    "category": "trace",
+    "description": "写作流程的轨迹包含 draft 与 await_confirm 节点，草稿正文不进轨迹密钥检查",
+    "modes": ["mock"],
+    "steps": [
+      {"op": "profile", "profile": "@fixture:profile_main"},
+      {"op": "draft", "request": "@fixture:draft_request", "expect": {"status": "awaiting_confirm"}},
+      {"op": "confirm", "confirmed": true, "expect": {"status": "confirmed", "trace": {"tools_include": ["draft", "await_confirm"], "min_rows": 2}}}
+    ]
+  }
+]

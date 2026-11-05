@@ -1,0 +1,23 @@
+defaults:
+  enabled: true
+  tos_risk: low
+  proxy: false
+  robots_respect: true
+  rate_requests: 1
+  rate_seconds: 2
+  daily_cap: 1000
+  cache_ttl_s: 7200
+adapters:
+  web.trafilatura: {}
+  web.crawl4ai: {}
+  web.jina: {}
+  feed.rss: {cache_ttl_s: 1800}
+  feed.rsshub: {cache_ttl_s: 1800}
+  hn.firebase: {}
+  hn.algolia: {}
+  search.searxng: {}
+  search.jina: {}
+  social.x_api: {cache_ttl_s: 86400}
+  social.reddit_search: {}
+# Exact routes reviewed to require no login; no arbitrary RSSHub route forwarding.
+rsshub_routes: []
