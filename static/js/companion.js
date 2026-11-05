@@ -467,6 +467,21 @@ function renderPanel() {
     s.dead ? null : mealList(s),
     s.dead ? null : photoSection(s),
     s.dead ? null : reportSection(),
+    h("div", { class: "buddy-actions" }, [
+      h("button", {
+        type: "button",
+        class: "btn btn-ghost btn-sm",
+        text: "导出我的数据",
+        onClick: () => {
+          const link = document.createElement("a");
+          link.href = "/api/export";
+          link.download = "";
+          document.body.append(link);
+          link.click();
+          link.remove();
+        },
+      }),
+    ]),
     h("details", { class: "buddy-details" }, [
       h("summary", { text: s.needs_setup ? "填写身体数据" : "修改身体数据 / 名字 / 社交风格" }),
       setupForm(s),

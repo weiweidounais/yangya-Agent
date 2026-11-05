@@ -11,10 +11,10 @@ LangGraph · FastAPI · 原生 JS 前端 · 可二次开发 · MIT
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Python 3.12](https://img.shields.io/badge/Python-3.12-blue.svg)](Dockerfile)
-[![Version](https://img.shields.io/badge/version-0.11.0-informational.svg)](VERSION)
+[![Version](https://img.shields.io/badge/version-0.12.0-informational.svg)](VERSION)
 [![Deploy to Render](https://img.shields.io/badge/Deploy-Render-46E3B7.svg)](https://render.com/deploy?repo=https://github.com/weiweidounais/yangya-Agent)
 
-> **这是 Personal Agent 的运动搭子二开版**：人设换成训练搭子「阿动」，新增运动档案、训练记录、周计划，以及 Q 版搭子（身体数据 → 体型、饮食/运动 → 热量差、沉睡与离别、社交风格、餐选项、周报推送、拍照识餐、组间休息计时）。记忆、确认卡、渠道、护栏、审计等底座能力保持不变。差异与扩展点见 [docs/sports-agent.md](docs/sports-agent.md) 与 [docs/companion.md](docs/companion.md)。
+> **这是 Personal Agent 的运动搭子二开版**：人设换成训练搭子「阿动」，新增运动档案、训练记录、周计划，以及 Q 版搭子（身体数据 → 体型、饮食/运动 → 热量差、沉睡与离别、社交风格、餐选项、周报推送、拍照识餐、组间休息计时）；并补上公网基线（限流、安全响应头、CORS 收紧、数据导出与备份）。记忆、确认卡、渠道、护栏、审计等底座能力保持不变。差异与扩展点见 [docs/sports-agent.md](docs/sports-agent.md) 与 [docs/companion.md](docs/companion.md)。
 
 [快速开始](#快速开始) · [它能做什么](#它能做什么) · [工作原理](#工作原理) · [多渠道接入](#多渠道接入) · [安全与隐私](#安全与隐私) · [二次开发](#二次开发)
 
@@ -165,6 +165,7 @@ flowchart LR
 - **网页内容是不可信数据。** 抓取结果带 `shared.untrusted_data` 规则进提示词，防提示注入有专门测试。
 - **预算与失控检测。** 每个任务按难度分档限制步数 / 时长 / token / 费用，近限额时收尾，超限给「继续」卡；每用户有日 / 月费用上限。
 - **轨迹日志。** 每个图节点一行：输入摘要、工具、参数、结果摘要、耗时、模型档位、token 估算、护栏命中；入库前统一脱敏，用户 / 线程以 HMAC 假名出现。
+- **公网基线。** 可配置的每 IP / 每令牌限流、CSP 与安全响应头、默认同源 CORS、`ENABLE_DOCS` 开关；数据可导出，SQLite 可在线备份。
 - **金标回归。** `tests/golden/` 覆盖安慰、危机、草稿、泄露、轨迹鉴权。安全类必须零失败；质量类与 `baseline.json` 比较。
 
 ## 配置
@@ -196,6 +197,7 @@ flowchart LR
 | 安全保存 | `SECRETS_FERNET_KEY`（逗号分隔可轮换） |
 | 预算 | `AGENT_BUDGET_<SIMPLE\|MEDIUM\|HARD>_<STEPS\|SECONDS\|TOKENS\|COST>`、`AGENT_COST_CAP_*`、`AGENT_MAX_REDRAFTS` |
 | 主动调度 | `PROACTIVE_ENABLED`、`PROACTIVE_TZ`、`PROACTIVE_TICK_SECONDS` |
+| 公网加固 | `API_RATE_LIMIT_ENABLED`、`API_RATE_LIMIT_PER_MINUTE`、`API_RATE_LIMIT_USER_PER_MINUTE`、`CORS_ALLOW_ORIGINS`、`ENABLE_DOCS` |
 | Harness | `HARNESS_ADMIN_TOKENS`、`HARNESS_ID_HMAC_KEY`、`PII_BACKEND`（regex / presidio / gliner）、`PRIVACY_SANDBOX_VALUES`、`TRACE_WRITE_MODE` |
 | 可观测性 | `LANGFUSE_ENABLED`、`LANGFUSE_HOST`、`LANGFUSE_PUBLIC_KEY`、`LANGFUSE_SECRET_KEY`、`LLM_PRICES_JSON` |
 | 记忆 | `MEMORY_VECTOR_ENABLED`、`INTENT_SCORING_MODE`、`SILICONFLOW_API_KEY` |
@@ -223,6 +225,7 @@ flowchart LR
 | `GET /bind` · `POST /api/channels/bind/complete` · `GET /sandbox` · `POST /api/sandbox/submit` | 渠道绑定与隐私安全通道 |
 | `POST /webhooks/feishu` · `POST /webhooks/openclaw/wechat` | 渠道入站 |
 | `POST /api/feedback` | 对话气泡下的 👍 / 👎 |
+| `GET /api/export` | 导出本人数据 JSON（不含密钥与安全输入区明文） |
 | `GET /api/admin/traces` · `/api/admin/audit` · `/api/admin/feedback` · `/api/admin/users*` | 管理接口（管理员令牌，按 scope 授权） |
 
 每个 `/api/*` 响应带 `X-Trace-Id`。所有路由都在 `app/main.py`，定时任务与管理后台分别在 `app/agent/schedules/api.py` 和 `app/admin/api.py`。
@@ -281,12 +284,12 @@ def weather_lookup(city: str, user_id: str = "") -> dict:
 | 记忆与上下文 | [context-assembly.md](docs/context-assembly.md) · [vector-memory-write.md](docs/vector-memory-write.md) · [intent-confidence-validation.md](docs/intent-confidence-validation.md) |
 | 渠道 | [channels.md](docs/channels.md) · [feishu-长连接.md](docs/feishu-长连接.md) · [OpenClaw 桥](integrations/openclaw-personal-agent-bridge/README.md) |
 | 定时任务 | [schedules.md](docs/schedules.md) |
-| 部署与运维 | [deploy.md](docs/deploy.md) · [postgres-rls.md](docs/postgres-rls.md) · [langfuse.md](docs/langfuse.md) · [admin.md](docs/admin.md) |
+| 部署与运维 | [deploy.md](docs/deploy.md) · [ops.md](docs/ops.md)（备份/恢复/导出/加固） · [postgres-rls.md](docs/postgres-rls.md) · [langfuse.md](docs/langfuse.md) · [admin.md](docs/admin.md) |
 | 界面 | [DESIGN.md](DESIGN.md)（chat-only 单页，浅色，Geist 自托管） |
 
 ## 现状与边界
 
-- 当前版本 0.11.0（运动搭子 · Q 版搭子 H5 版），SQLite 单机即可跑，Postgres + RLS 已可用但未在生产长期验证。
+- 当前版本 0.12.0（运动搭子 · Q 版搭子 H5 版 + 公网加固），SQLite 单机即可跑，Postgres + RLS 已可用但未在生产长期验证。
 - QQ 渠道只有接口位；向量记忆、主动调度、两个渠道、Langfuse 全部默认关闭，按需打开。
 - Render 免费实例无持久盘，仅适合演示。
 - 已知粗糙处与常见坑见 [CONTRIBUTING 第 5、6 节](CONTRIBUTING.md#5-已知的粗糙处)。

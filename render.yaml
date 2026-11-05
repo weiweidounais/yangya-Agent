@@ -44,8 +44,14 @@ services:
       # --- App ---
       - key: DATA_DIR
         value: /app/data
-      - key: CORS_ALLOW_ORIGINS
-        value: "*"
+      # Same-origin by default (the UI is served by this app). Add explicit
+      # origins only if a separate frontend calls this API from another domain.
+      - key: API_RATE_LIMIT_ENABLED
+        value: "1"
+      - key: API_RATE_LIMIT_PER_MINUTE
+        value: "300"
+      - key: ENABLE_DOCS
+        value: "0"
       - key: HOST
         value: "0.0.0.0"
       # --- Auth (required: without AUTH_SECRET every /api call returns 503) ---

@@ -1,0 +1,28 @@
+# 项目自带测试输出（2026-11-05 21:40）
+
+## pytest
+........................................................................ [ 79%]
+........................................................................ [ 83%]
+........................................................................ [ 87%]
+..s..................................................................... [ 91%]
+........................................................................ [ 95%]
+........................................................................ [ 99%]
+...                                                                      [100%]
+1718 passed, 85 skipped in 131.28s (0:02:11)
+
+## 金标（mock）
+[PASS] harness_invariants inv_trace_never_stores_canary
+[PASS] harness_invariants inv_trace_never_stores_admin_token
+[PASS] harness_invariants inv_traces_written
+
+GOLDEN PASS mode=mock pass_rate=100.0% (42/42) skipped=0
+  safety  PASS failed=0/22 (must be 0)
+  quality PASS rate=100.0% (20/20) threshold=100% baseline=1.0
+  comfort            pass=10 fail=0 skipped=0
+  crisis             pass=8 fail=0 skipped=0
+  draft              pass=5 fail=0 skipped=0
+  harness_invariants pass=5 fail=0 skipped=0
+  leak               pass=9 fail=0 skipped=0
+  trace              pass=5 fail=0 skipped=0
+
+（manifest 行来自临时 clone，已去掉；以仓库实际提交为准。）

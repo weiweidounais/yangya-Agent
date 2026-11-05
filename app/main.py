@@ -56,26 +56,37 @@ STATIC = ROOT / "static"
 
 load_dotenv(ROOT / ".env")
 
-app = FastAPI(title="Personal Agent", version=__version__)
+_docs_on = (os.getenv("ENABLE_DOCS") or "1").strip().lower() in {"1", "true", "yes", "on"}
+app = FastAPI(
+    title="Personal Agent",
+    version=__version__,
+    docs_url="/docs" if _docs_on else None,
+    redoc_url="/redoc" if _docs_on else None,
+    openapi_url="/openapi.json" if _docs_on else None,
+)
 app.router.route_class = AuditedAdminRoute
 
-# Browser chat from other origins (same-origin on Render also fine).
-# CORS_ALLOW_ORIGINS=* (default) or comma-separated list.
-_cors_raw = (os.getenv("CORS_ALLOW_ORIGINS") or "*").strip()
-_cors_origins = (
-    ["*"]
-    if _cors_raw == "*"
-    else [o.strip() for o in _cors_raw.split(",") if o.strip()]
-)
+# Same-origin by default: the UI is served by this app. Cross-origin browser
+# clients must opt in explicitly (CORS_ALLOW_ORIGINS=* or a comma-separated list),
+# or set PUBLIC_BASE_URL and let that single origin through.
+_cors_raw = (os.getenv("CORS_ALLOW_ORIGINS") or "").strip()
+if _cors_raw == "*":
+    _cors_origins = ["*"]
+elif _cors_raw:
+    _cors_origins = [o.strip().rstrip("/") for o in _cors_raw.split(",") if o.strip()]
+else:
+    _public = (os.getenv("PUBLIC_BASE_URL") or "").strip().rstrip("/")
+    _cors_origins = [_public] if _public.startswith(("http://", "https://")) else []
 app.add_middleware(TraceMiddleware)
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=_cors_origins or ["*"],
-    allow_credentials=_cors_origins != ["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
-    expose_headers=["X-Trace-Id"],
-)
+if _cors_origins:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=_cors_origins,
+        allow_credentials=_cors_origins != ["*"],
+        allow_methods=["*"],
+        allow_headers=["*"],
+        expose_headers=["X-Trace-Id"],
+    )
 from app.admin.api import router as admin_router  # noqa: E402
 
 app.include_router(admin_router)
@@ -83,6 +94,11 @@ app.include_router(admin_router)
 from app.session_identity import SESSION_COOKIE, SessionIdentityMiddleware, new_anonymous_user_id, session_user  # noqa: E402
 
 app.add_middleware(SessionIdentityMiddleware, router=app.router)
+from app.hardening import SecurityHeadersMiddleware  # noqa: E402
+from app.ratelimit import RateLimitMiddleware  # noqa: E402
+
+app.add_middleware(RateLimitMiddleware)
+app.add_middleware(SecurityHeadersMiddleware)
 
 
 @app.post("/api/session")
@@ -1351,6 +1367,61 @@ async def companion_food_analyze(file: UploadFile = File(...)) -> ApiResponse:
         status = 501 if exc.code == "vision_not_configured" else 400
         raise HTTPException(status, detail=exc.as_dict()["error"]) from exc
     return ApiResponse(status="food_candidates", data=result)
+
+
+@app.get("/api/export")
+def export_my_data(user_id: str = Query("")) -> Any:
+    """Download the owner's data as JSON (no secrets, no other users).
+
+    Includes profile, memory card, workouts, meals, plans and schedules. Saved
+    secret values are never exported; only their labels are listed so the user
+    knows what still lives in the vault.
+    """
+    from fastapi.responses import JSONResponse
+
+    from app import __version__
+    from app.agent.memory.card import card_view
+    from app.agent.memory import episodic
+    from app.agent.schedules import service as schedule_service
+    from app.companion import store as companion_store
+    from app.sports import store as sport_store
+    from app.secrets_vault import saved_labels
+
+    uid = _require_user(user_id)
+    with user_scope(uid):
+        profile = db.get_profile(uid)
+        payload = {
+            "ok": True,
+            "exported_at": datetime.now().astimezone().isoformat(timespec="seconds"),
+            "version": __version__,
+            "user_id": uid,
+            "profile": public_profile(profile, user_id=uid),
+            "memory": card_view(uid),
+            "workouts": sport_store.list_workouts(uid, days=3650, limit=2000),
+            "meals": episodic.list_events(uid, kind="meal", limit=2000),
+            "sport": {
+                "profile": sport_store.get_profile(uid),
+                "plan": sport_store.get_plan(uid),
+            },
+            "companion": {
+                "name": profile.get("companion_name") or "",
+                "generation": int(profile.get("companion_generation") or 1),
+                "born_at": profile.get("companion_born_at") or "",
+                "dead_at": profile.get("companion_dead_at") or "",
+                "body": companion_store.body(uid),
+            },
+            "schedules": schedule_service.list_schedules(uid),
+            "saved_secret_labels": saved_labels(uid),
+            "note": "密钥与安全输入区的值不会导出；需要删除数据请使用记忆遗忘接口。",
+        }
+    stamp = datetime.now().strftime("%Y%m%d")
+    return JSONResponse(
+        payload,
+        headers={
+            "Content-Disposition": f'attachment; filename="yangya-export-{stamp}.json"',
+            "Cache-Control": "no-store",
+        },
+    )
 
 
 @app.get("/api/tools")
